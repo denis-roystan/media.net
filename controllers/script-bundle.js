@@ -2,12 +2,14 @@
 
 var apiMovie = {
   movies: [],
+  userWatchList: [],
   loadMovies: function loadMovies() {
     var html = '';
-    apiMovie.movies.forEach(function (element) {
-      html = html + "<div class=\"card\">\n                    <img src=\"" + config.imageBaseUrl + element.poster_path + "\" alt=\"Poster\" class=\"poster\">\n                    <div class=\"container\">\n                        <p title=\"" + element.title + "\"><b>" + element.title + "</b></p> \n                        <p>" + new Date(element.release_date).getFullYear() + "</p> \n                    </div>\n                </div>";
+    apiMovie.movies.forEach(function (element, index) {
+      html = html + "<div class=\"card\">\n                    <div class=\"overlay\">\n                        <i class=\"material-icons add-to-watchlist\" data-index=\"" + index + "\">add_circle_outline</i>\n                    </div>\n                    <img src=\"" + config.imageBaseUrl + element.poster_path + "\" alt=\"Poster\" class=\"poster\">\n                    <div class=\"container\">\n                        <p title=\"" + element.title + "\"><b>" + element.title + "</b></p> \n                        <p>" + new Date(element.release_date).getFullYear() + "</p> \n                    </div>\n                </div>";
     });
     document.getElementById("cards-wrapper").innerHTML = html;
+    main.addToWatchListListener();
   },
   getPopularMovies: function getPopularMovies() {
     var requestPath = config.apiUrl + '/movie/popular?api_key=' + config.apiKey;
@@ -15,7 +17,7 @@ var apiMovie = {
       response = JSON.parse(response);
       apiMovie.movies = response.results.slice(0, 10);
       apiMovie.movies.sort(function (curr, next) {
-        return curr.title.charAt(0).toLowerCase() < next.title.charAt(0).toLowerCase() && -1;
+        return curr.title.toLowerCase() < next.title.toLowerCase() && -1;
       });
       apiMovie.loadMovies();
     }, function (error) {});
@@ -24,11 +26,34 @@ var apiMovie = {
     var requestPath = config.apiUrl + '/search/movie?api_key=' + config.apiKey + '&query=' + query;
     httpClient.get(requestPath, function (response) {
       response = JSON.parse(response);
-      apiMovie.movies = response.results.slice(0, 10); // apiMovie.movies.sort((curr, next) => { return (curr.title.charAt(0).toLowerCase() < next.title.charAt(0).toLowerCase()) && -1 });
+      apiMovie.movies = response.results.slice(0, 10);
 
-      main.executeSortBy();
-      apiMovie.loadMovies();
+      if (apiMovie.movies.length === 0) {
+        document.getElementById('cards-wrapper').innerText = 'No results found';
+      } else {
+        main.executeSortBy();
+        apiMovie.loadMovies();
+      }
     }, function (error) {});
+  },
+  userWatchListRefresh: function userWatchListRefresh() {
+    apiMovie.userWatchList.length > 0 ? document.getElementById("users-list-body").classList.add('no-after') : document.getElementById("users-list-body").classList.remove('no-after');
+    var html = '';
+    apiMovie.userWatchList.forEach(function (element, index) {
+      html = html + "<div class=\"card\">\n                    <i class=\"material-icons cancel\" data-index=\"" + index + "\">cancel</i>\n                    <img src=\"" + config.imageBaseUrl + element.poster_path + "\" alt=\"Poster\" class=\"poster\">\n                    <div class=\"container\">\n                        <p title=\"" + element.title + "\"><b>" + element.title + "</b></p> \n                        <p>" + new Date(element.release_date).getFullYear() + "</p> \n                    </div>\n                </div>";
+    });
+    document.getElementById("users-list-body").innerHTML = html;
+    apiMovie.removeFromWatchList();
+  },
+  removeFromWatchList: function removeFromWatchList() {
+    var elements = document.querySelectorAll('.users-list .card .cancel');
+    elements.forEach(function (element, index) {
+      element.addEventListener('click', function (event) {
+        apiMovie.userWatchList.splice(parseInt(event.target.getAttribute('data-index')), 1);
+        showSnackBar('Removed one item from Default Watchlist..');
+        apiMovie.userWatchListRefresh();
+      });
+    });
   }
 };
 "use strict";
@@ -139,6 +164,7 @@ window.onload = function () {
 var main = {
   sortBy: 'title',
   sortOrder: 'asc',
+  usersListOpen: false,
   executeSortBy: function executeSortBy(type) {
     main.sortBy = type ? type : main.sortBy;
     main.executeSortOrder(main.sortOrder);
@@ -149,7 +175,7 @@ var main = {
     switch (order) {
       case 'asc':
         if (main.sortBy === 'title') apiMovie.movies.sort(function (curr, next) {
-          return curr[main.sortBy].charAt(0).toLowerCase() < next[main.sortBy].charAt(0).toLowerCase() && -1;
+          return curr[main.sortBy].toLowerCase() < next[main.sortBy].toLowerCase() && -1;
         });else apiMovie.movies.sort(function (curr, next) {
           return new Date(curr[main.sortBy]).getFullYear() < new Date(next[main.sortBy]).getFullYear() && -1;
         });
@@ -157,7 +183,7 @@ var main = {
 
       case 'desc':
         if (main.sortBy === 'title') apiMovie.movies.sort(function (curr, next) {
-          return curr[main.sortBy].charAt(0).toLowerCase() > next[main.sortBy].charAt(0).toLowerCase() && -1;
+          return curr[main.sortBy].toLowerCase() > next[main.sortBy].toLowerCase() && -1;
         });else apiMovie.movies.sort(function (curr, next) {
           return new Date(curr[main.sortBy]).getFullYear() > new Date(next[main.sortBy]).getFullYear() && -1;
         });
@@ -172,6 +198,24 @@ var main = {
   search: function search(value) {
     console.log(value);
     apiMovie.searchMovie(value);
+  },
+  addToWatchListListener: function addToWatchListListener() {
+    var elements = document.querySelectorAll('.add-to-watchlist');
+    elements.forEach(function (element) {
+      element.addEventListener('click', function (event) {
+        var movie = apiMovie.movies.find(function (obj, index) {
+          return index == event.target.getAttribute('data-index');
+        });
+
+        if (!apiMovie.userWatchList.includes(movie)) {
+          apiMovie.userWatchList.push(movie);
+          showSnackBar('Saved to Default Watchlist..');
+          apiMovie.userWatchListRefresh();
+        } else {
+          showSnackBar('Already Added..');
+        }
+      });
+    });
   },
   domListeners: function domListeners() {
     // Search Listener
@@ -229,7 +273,8 @@ var main = {
           event.target.classList.add('selected');
           main.executeSortOrder(event.target.getAttribute('data-order'));
         });
-      }
+      } //User WatchList Listeners
+
     } catch (err) {
       _didIteratorError2 = true;
       _iteratorError2 = err;
@@ -244,14 +289,20 @@ var main = {
         }
       }
     }
-  }
-};
-"use strict";
 
-var config = {
-  apiUrl: 'https://api.themoviedb.org/3',
-  apiKey: "699aa1f6bb0b3f6a60e074824770ac61",
-  imageBaseUrl: "https://image.tmdb.org/t/p/w200"
+    var watchlistOpen = document.getElementById('users-list-toggle');
+    watchlistOpen.addEventListener('click', function (event) {
+      var listWrapper = document.getElementById('users-list');
+
+      if (main.usersListOpen) {
+        main.usersListOpen = !main.usersListOpen;
+        listWrapper.style.bottom = "-187px";
+      } else {
+        main.usersListOpen = !main.usersListOpen;
+        listWrapper.style.bottom = 0 + "px";
+      }
+    });
+  }
 };
 "use strict";
 
@@ -274,3 +325,19 @@ function debounce(func, wait, immediate) {
 }
 
 ;
+
+function showSnackBar(text) {
+  var x = document.getElementById("snackbar");
+  x.className = "show";
+  x.innerHTML = text;
+  setTimeout(function () {
+    x.className = x.className.replace("show", "");
+  }, 3000);
+}
+"use strict";
+
+var config = {
+  apiUrl: 'https://api.themoviedb.org/3',
+  apiKey: "699aa1f6bb0b3f6a60e074824770ac61",
+  imageBaseUrl: "https://image.tmdb.org/t/p/w200"
+};
