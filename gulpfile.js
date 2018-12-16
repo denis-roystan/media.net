@@ -10,7 +10,10 @@ var gulp = require('gulp'),
 
 var paths = {
     styles: {
-        src: './styles/**/*.less',
+        src: [
+            './styles/*.less',
+            './styles/**/*.less'
+        ],
         dest: './dist/styles/'
     },
     scripts: {
@@ -30,7 +33,7 @@ gulp.task('less', function(done) {
     gulp.src(paths.styles.src)
     .pipe(less())
     .pipe(concat('style-bundle.css'))
-    .pipe(gulp.dest(paths.styles.dest))
+    .pipe(gulp.dest(paths.styles.dest), { overwrite: true })
     .pipe(connect.reload());
     done();
 });
@@ -42,7 +45,7 @@ gulp.task('minify-js', function(done) {
     }))
     .pipe(concat('script-bundle.js'))
     // .pipe(uglify())
-    .pipe(gulp.dest(paths.scripts.dest))
+    .pipe(gulp.dest(paths.scripts.dest), { overwrite: true })
     .pipe(connect.reload());
     done()
 });
@@ -50,7 +53,7 @@ gulp.task('minify-js', function(done) {
 gulp.task('render-html', function(done) {
     gulp.src('./index.html')
     .pipe(htmlmin({ collapseWhitespace: true }))
-    .pipe(gulp.dest('./dist/'))
+    .pipe(gulp.dest('./dist/'), { overwrite: true })
     .pipe(connect.reload());
     done();
 });

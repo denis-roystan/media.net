@@ -4,14 +4,41 @@
     width: 200px;
     border-radius: 5px;
     display: inline-block;
+    position: relative;
     margin: 0 15px 30px;
   
     &:hover {
         box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
+
+        .overlay {
+            display: block;
+        }
+    }
+
+    .overlay {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0,0,0,0.3);
+        border-radius: 5px;
+
+        .material-icons {
+            transform: translate(-50%, -50%);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            font-size: 56px;
+            color: #FFF;
+            cursor: pointer;
+        }
     }
   
     .poster {
-        width: 100%;
+        max-width: 100%;
+        max-height: 300px;
         border-radius: 5px 5px 0 0;
     }
   

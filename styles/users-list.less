@@ -1,0 +1,65 @@
+.users-list {
+    .title {
+        position: absolute;
+        right: 0;
+        top: -35px;
+        background: #aac;
+        color: #fff;
+        padding: 9px 10px;
+        border-radius: 2px;
+        cursor: pointer;
+    }
+
+    #users-list-body {
+        white-space: nowrap;
+        overflow-x: overlay;
+
+        &.no-after {
+            &:after {
+                content: '';
+                display: none;
+            }
+        }
+
+        &:after {
+            content: 'Empty WatchList';
+            transform: translate(-50%, -50%);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            color: #555;
+        }        
+    }
+
+    .card {
+        width: 100px;
+        height: 167px;
+        margin: 5px;    
+        margin: 12px 5px 5px;
+        background-color: #ffffff;
+        position: relative;
+        display: inline-block;
+
+        .poster {
+            width: 100%;
+            height: 115px;
+        }
+
+        .container {
+            p {
+                font-size: 12px;
+                margin: 5px;
+            }
+        }
+
+        .cancel {
+            position: absolute;
+            color: #f00;
+            right: -9px;
+            top: -8px;
+            cursor: pointer;
+            background: #FFF;
+            border-radius: 100%;
+        }
+    }
+}
